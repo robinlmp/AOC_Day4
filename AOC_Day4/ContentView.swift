@@ -40,46 +40,148 @@ struct ContentView: View {
     var body: some View {
         Text("Hello, world!")
             .padding()
-        let _ = print(numberGrids(input: example)[0])
+        let _ = stepThroughCalledNumbersPart2()
+    }
+    
+    
+    func loadFile(fileName: String) -> String? {
+        guard let filepath = Bundle.main.path(forResource: fileName, ofType: "txt"),
+              let contents = try? String(contentsOfFile: filepath) else { return nil }
+        return contents
+    }
+    
+    func stepThroughCalledNumbersPart2() -> Int? {
+        guard let rawString = loadFile(fileName: "input-4") else {return nil}
+        guard let exampleNumbers = separateCalledNumbers(input: rawString) else {return nil}
+        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
+        
+        var calledNumbers: [Int] = []
+        let rowGrids = numberGridsInRows(input: rawString)
+        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
+        let allGrids = rowGrids + columnGrids
+        
+    outerLoop: for number in exampleNumbers {
+        calledNumbers.append(number)
+        let calledNumbersSet: Set = Set(calledNumbers)
+        
+        var count = 0
+        
+        for grid in allGrids {
+            count += 1
+            for rowOrColumn in grid {
+                let rowOrColumnSet: Set = Set(rowOrColumn)
+                
+                if rowOrColumnSet.isSubset(of: calledNumbersSet) {
+                    var flatGrid = grid.flatMap { $0 }
+                    
+                    for num in calledNumbers {
+                        if flatGrid.contains(num) {
+                            if let index = flatGrid.firstIndex(of: num) {
+                                flatGrid.remove(at: index)
+                            }
+                        }
+                    }
+                    let total = flatGrid.reduce(0, +)
+                    if let lastCalledNumber = calledNumbers.last {
+                        let output = total * lastCalledNumber
+                        print("output = \(output)")
+//                        return total * lastCalledNumber
+                    }
+//                    break outerLoop
+                }
+            }
+        }
+    }
+        return nil
+    }
+    
+    
+    func stepThroughCalledNumbers() -> Int? {
+        guard let rawString = loadFile(fileName: "input-4") else {return nil}
+        guard let exampleNumbers = separateCalledNumbers(input: rawString) else {return nil}
+        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
+        
+        var calledNumbers: [Int] = []
+        let rowGrids = numberGridsInRows(input: rawString)
+        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
+        let allGrids = rowGrids + columnGrids
+        
+        outerLoop: for number in exampleNumbers {
+            calledNumbers.append(number)
+            let calledNumbersSet: Set = Set(calledNumbers)
+
+            for grid in allGrids {
+
+                for rowOrColumn in grid {
+                    let rowOrColumnSet: Set = Set(rowOrColumn)
+                    
+                    if rowOrColumnSet.isSubset(of: calledNumbersSet) {
+                        var flatGrid = grid.flatMap { $0 }
+                        
+                        for num in calledNumbers {
+                            if flatGrid.contains(num) {
+                                if let index = flatGrid.firstIndex(of: num) {
+                                    flatGrid.remove(at: index)
+                                }
+                            }
+                        }
+                        let total = flatGrid.reduce(0, +)
+                        if let lastCalledNumber = calledNumbers.last {
+                            return total * lastCalledNumber
+                        }
+                        break outerLoop
+                    }
+                }
+            }
+        }
+        return nil
     }
     
     func separateCalledNumbers(input: String) -> [Int]? {
         let stringBlocks = input.components(separatedBy: "\n\n")
-        return stringBlocks[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let firstBlock = stringBlocks[0].trimmingCharacters(in: .whitespacesAndNewlines)
             .components(separatedBy: ",")
             .compactMap(Int.init)
+        print("first block (numbers to be called): \(firstBlock)")
+        return firstBlock
     }
     
-    func numberGrids(input: String) -> [[[Int]]] {
+    func numberGridsInRows(input: String) -> [[[Int]]] {
         var intBlocks: [[[Int]]] = []
         var stringBlocks = input.components(separatedBy: "\n\n")
         stringBlocks.remove(at: 0)
-
+        
         for block in stringBlocks {
             var tempBlock: [[Int]] = []
             let rows = block.components(separatedBy: "\n")
             for row in rows {
-                tempBlock.append(row.components(separatedBy: " ").compactMap(Int.init))
+                if !row.isEmpty {
+                    tempBlock.append(row.components(separatedBy: " ").compactMap(Int.init))
+                }
             }
-            let tempColumns = makeColumns(numberGrid: tempBlock)
-            tempBlock += tempColumns
             intBlocks.append(tempBlock)
         }
         return intBlocks
     }
     
-    func makeColumns(numberGrid: [[Int]]) -> [[Int]] {
-        let numberOfColumns = numberGrid[0].count
-        var columns: [[Int]] = []
+    
+    func makeColumnGrid(numberGridInRows: [[[Int]]]) -> [[[Int]]] {
+        var tempGrids: [[[Int]]] = []
         
-        for i in 0..<numberOfColumns {
-            var tempColumn: [Int] = []
-            for row in numberGrid {
-                tempColumn.append(row[i])
+        for grid in numberGridInRows {
+            let numberOfColumns = grid[0].count
+            var columns: [[Int]] = []
+            
+            for i in 0..<numberOfColumns {
+                var tempColumn: [Int] = []
+                for row in grid {
+                    tempColumn.append(row[i])
+                }
+                columns.append(tempColumn)
             }
-            columns.append(tempColumn)
+            tempGrids.append(columns)
         }
-        return columns
+        return tempGrids
     }
 }
 
