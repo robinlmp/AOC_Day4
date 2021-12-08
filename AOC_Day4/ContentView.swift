@@ -34,24 +34,6 @@ struct Game {
     var calledNumbers: CalledNumbers
     static var grids: [Grid] = []
     
-    
-//    init(fileName: String) {
-//        if let contents = loadFile(fileName: fileName) {
-//            let separatedContentsOfFile = separateCalledNumbers(input: contents)
-//            if let tempCalledNums = separatedContentsOfFile.0 {
-//                self.calledNumbers = CalledNumbers(allNumbers: tempCalledNums)
-//            }
-//
-////            if let tempBlocks = separatedContentsOfFile.1 {
-////                for block in tempBlocks {
-////                    self.loadGridsIntoGame(input: block)
-////                }
-////
-////            }
-//
-//        }
-//    }
-    
     func loadGridsIntoGame(input: String) {
         var tempBlock: [[Int]] = []
         var tempGrid = Grid()
@@ -74,11 +56,10 @@ struct Game {
     mutating func checkGridsAgainstCalledNumbers() {
         for i in 0..<Game.grids.count {
             if Game.grids[i].hasWon == false {
-                if let gridWon = Game.grids[i].checkRowsAndColumns(calledNumbers: calledNumbers.calledNumbers) {
+                if let gridWon = Game.grids[i].checkRowsAndColumns(calledNumbers: calledNumbers) {
                     print("grid \(i) won")
                     print("called numbers when grid \(i) won \(gridWon.1)\n")
                     
-                    let f
                 }
                 
             }
@@ -91,7 +72,12 @@ struct Grid {
     static var gridsCreated = 0
     
     let gridIndex: Int
-    var numbers: [GridNumber] = []
+    var numbers: [GridNumber] = [] {
+        didSet {
+            numbersSet = Set(numbers.map { $0.number })
+        }
+    }
+    var numbersSet: Set<Int> = []
     var hasWon = false
     
     var rows = 0
@@ -114,17 +100,33 @@ struct Grid {
         }
     }
     
-    mutating func checkRowsAndColumns(calledNumbers: Set<Int>) -> (Bool, Set<Int>)? {
+    mutating func checkRowsAndColumns(calledNumbers: CalledNumbers) -> (Bool, [Int])? {
         countGridRowsAndColumns()
+        
 
         for i in 0..<rows {
             let tempRow = numbers.filter { $0.coordinates.y == i }
 //            print("temp row: \(tempRow)")
             let tempRowSet = Set(tempRow.map { $0.number } )
 //            print(tempRowSet)
-            if tempRowSet.isSubset(of: calledNumbers) {
+            if tempRowSet.isSubset(of: calledNumbers.calledNumbersSet) {
                 hasWon = true
-                return (true, calledNumbers)
+                
+                var tempGridSet: Set<Int> = numbersSet
+                
+                for num in calledNumbers.calledNumbers {
+                    if tempGridSet.contains(num) {
+                        if let index = tempGridSet.firstIndex(of: num) {
+                            tempGridSet.remove(at: index)
+                        }
+                    }
+                }
+                let total = tempGridSet.reduce(0, +)
+                if let lastCalledNumber = calledNumbers.calledNumbers.last {
+                    print( total * lastCalledNumber )
+                }
+                
+                return (true, calledNumbers.calledNumbers)
             }
         }
         
@@ -133,9 +135,24 @@ struct Grid {
 //            print("temp row: \(tempColumn)")
             let tempColumnSet = Set(tempColumn.map { $0.number } )
 //            print(tempColumnSet)
-            if tempColumnSet.isSubset(of: calledNumbers) {
+            if tempColumnSet.isSubset(of: calledNumbers.calledNumbersSet) {
                 hasWon = true
-                return (true, calledNumbers)
+                
+                var tempGridSet: Set<Int> = numbersSet
+                
+                for num in calledNumbers.calledNumbers {
+                    if tempGridSet.contains(num) {
+                        if let index = tempGridSet.firstIndex(of: num) {
+                            tempGridSet.remove(at: index)
+                        }
+                    }
+                }
+                let total = tempGridSet.reduce(0, +)
+                if let lastCalledNumber = calledNumbers.calledNumbers.last {
+                    print( total * lastCalledNumber )
+                }
+                
+                return (true, calledNumbers.calledNumbers)
                 
             }
         }
@@ -153,7 +170,12 @@ struct GridNumber {
 struct CalledNumbers {
     let allNumbers: [Int]
     let allNumbersSet: Set<Int>
-    var calledNumbers: Set<Int> = []
+    var calledNumbers: [Int] = [] {
+        didSet {
+            calledNumbersSet = Set(calledNumbers)
+        }
+    }
+    var calledNumbersSet: Set<Int> = []
     
     init(allNumbers: [Int]) {
         self.allNumbers = allNumbers
@@ -177,17 +199,13 @@ struct ContentView: View {
     var body: some View {
         Text("Hello, world!")
             .padding()
-//        let _ = setUpGame(fileName: "input-4")
-        let _ = playGame1(fileName: "input-4")
-        
-        
+        let _ = playGame(fileName: "input-4")
     }
     
-    func playGame1(fileName: String) {
-
+    func playGame(fileName: String) {
         if var game = setUpGame(fileName: fileName) {
             for number in game.calledNumbers.allNumbers {
-                game.calledNumbers.calledNumbers.insert(number)
+                game.calledNumbers.calledNumbers.append(number)
                 game.checkGridsAgainstCalledNumbers()
             }
         }
@@ -228,89 +246,6 @@ struct ContentView: View {
     }
     
     
-//    func part2(fileName: String) -> Int? {
-//        guard let contents = loadFile(fileName: fileName) else {return nil}
-//        guard let calledNumbersFromFile = separateCalledNumbers(input: contents).0 else {return nil}
-//        var calledNumbers = CalledNumbers(allNumbers: calledNumbersFromFile)
-//        guard let gridsFromFile = separateCalledNumbers(input: contents).1 else {return nil}
-//
-//        var game = Game(calledNumbers: calledNumbers)
-//
-//        for i in 0..<gridsFromFile.count {
-//            game.loadGridsIntoGame(input: gridsFromFile[i])
-//        }
-//
-//        game.checkGridsAgainstCalledNumbers()
-//
-//        return nil
-//    }
-    
-
-    
-//    func part2(fileName: String) -> Int? {
-//        guard let contents = loadFile(fileName: fileName) else {return nil}
-//        guard let calledNumbersFromFile = separateCalledNumbers(input: contents).0 else {return nil}
-//        var calledNumbers = CalledNumbers(allNumbers: calledNumbersFromFile)
-//        guard let gridsFromFile = separateCalledNumbers(input: contents).1 else {return nil}
-//
-//        for i in 0..<gridsFromFile.count {
-//            let rows: [Set<Int>] = makeRows(input: gridsFromFile[i])
-//            let columns: [Set<Int>] = makeRows(input: gridsFromFile[i])
-//
-//            var grid = Grid(rows: rows, columns: columns, index: <#T##Int#>)
-//
-//            Grids.shared.append(grid)
-//        }
-//
-//        return nil
-//    }
-//
-//    func makeRows(input: String) -> [Set<Int>] {
-//            var tempBlock: [Set<Int>] = []
-//            let rows = input.components(separatedBy: "\n")
-//            for row in rows {
-//                if !row.isEmpty {
-//                    tempBlock.append(Set(row.components(separatedBy: " ").compactMap(Int.init)))
-//                }
-//            }
-//        return tempBlock
-//    }
-//
-//    func makeColumns(input: [[Int]]) -> [[Int]] {
-//        let numberOfColumns = input[0].count
-//        var columns: [[Int]] = []
-//
-//        for i in 0..<numberOfColumns {
-//            var tempColumn: [Int] = []
-//            for row in input {
-//                tempColumn.append(row[i])
-//            }
-//            columns.append(tempColumn)
-//        }
-//        return columns
-//    }
-    
-
-    
-    
-    
-//    func createGameGrid(input: String) -> String {
-//        var stringBlocks = input.components(separatedBy: "\n\n")
-//        stringBlocks.remove(at: 0)
-//        return ""
-//    }
-//
-//    func separateCalledNumbers(input: String) -> ([Int]?, [String]?) {
-//        let stringBlocks = input.components(separatedBy: "\n\n")
-//        let firstBlock = stringBlocks[0].trimmingCharacters(in: .whitespacesAndNewlines)
-//            .components(separatedBy: ",")
-//            .compactMap(Int.init)
-//        var gridBlocks = stringBlocks
-//        gridBlocks.remove(at: 0)
-////        print("first block (numbers to be called): \(firstBlock)")
-//        return (firstBlock, gridBlocks)
-//    }
-    
     func numberGridsInRows(input: String) -> [[[Int]]] {
         var intBlocks: [[[Int]]] = []
         var stringBlocks = input.components(separatedBy: "\n\n")
@@ -349,47 +284,6 @@ struct ContentView: View {
         return tempGrids
     }
     
-//    func stepThroughCalledNumbers() -> Int? {
-//        guard let rawString = loadFile(fileName: "input-4") else {return nil}
-//        guard let exampleNumbers = separateCalledNumbers(input: rawString).0 else {return nil}
-//        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
-//
-//        var calledNumbers: [Int] = []
-//        let rowGrids = numberGridsInRows(input: rawString)
-//        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
-//        let allGrids = rowGrids + columnGrids
-//
-//        outerLoop: for number in exampleNumbers {
-//            calledNumbers.append(number)
-//            let calledNumbersSet: Set = Set(calledNumbers)
-//
-//            for grid in allGrids {
-//
-//                for rowOrColumn in grid {
-//                    let rowOrColumnSet: Set = Set(rowOrColumn)
-//
-//                    if rowOrColumnSet.isSubset(of: calledNumbersSet) {
-//                        var flatGrid = grid.flatMap { $0 }
-//
-//                        for num in calledNumbers {
-//                            if flatGrid.contains(num) {
-//                                if let index = flatGrid.firstIndex(of: num) {
-//                                    flatGrid.remove(at: index)
-//                                }
-//                            }
-//                        }
-//                        let total = flatGrid.reduce(0, +)
-//                        if let lastCalledNumber = calledNumbers.last {
-//                            return total * lastCalledNumber
-//                        }
-//                        break outerLoop
-//                    }
-//                }
-//            }
-//        }
-//        return nil
-//    }
-    
 }
 
 struct ContentView_Previews: PreviewProvider {
@@ -397,193 +291,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
-
-
-//    func stepThroughCalledNumbersPart2() -> Int? {
-//        guard let rawString = loadFile(fileName: "input-4") else {return nil}
-//        guard let exampleNumbers = separateCalledNumbers(input: rawString) else {return nil}
-//        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
-//
-//        var calledNumbers: [Int] = []
-//        let rowGrids = numberGridsInRows(input: rawString)
-//        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
-//        let allGrids = rowGrids + columnGrids
-//
-//        var gridsNotWon: Set<Int> = []
-//        for i in 0..<rowGrids.count {
-//            gridsNotWon.insert(i)
-//        }
-//
-//        var gridsWon: Set<Int> = []
-//
-//    outerLoop: for number in exampleNumbers {
-//        calledNumbers.append(number)
-//        let calledNumbersSet: Set = Set(calledNumbers)
-//
-//
-//        for i in 0..<rowGrids.count {
-//
-//            for j in 0..<5 {
-//                if (Set(rowGrids[i][j]).isSubset(of: calledNumbersSet) || Set(columnGrids[i][j]).isSubset(of: calledNumbersSet)) && (gridsNotWon.count - gridsWon.count) > 1 {
-//                    print("not won \(gridsNotWon.count)")
-//                    print("won: \(gridsWon.count)")
-//
-//                    gridsWon.insert(i)
-////                    print("grid won: \(Array(gridsWon).sorted())")
-//                    print("")
-//                } else if (Set(rowGrids[i][j]).isSubset(of: calledNumbersSet) || Set(columnGrids[i][j]).isSubset(of: calledNumbersSet)) && (gridsNotWon.count - gridsWon.count) == 1 {
-//
-//                    var flatGrid = rowGrids[i].flatMap { $0 }
-//                    print("flat grid at start: \(flatGrid)")
-//
-//                    for num in calledNumbers {
-//                        if flatGrid.contains(num) {
-//                            if let index = flatGrid.firstIndex(of: num) {
-//                                flatGrid.remove(at: index)
-//                            }
-//                        }
-//                    }
-//                    print("flat grid at end: \(flatGrid)")
-//                    print("last called number: \(calledNumbers.last)")
-//
-//                    let total = flatGrid.reduce(0, +)
-//                    if let lastCalledNumber = calledNumbers.last {
-//                        return total * lastCalledNumber
-//                    }
-//                    break outerLoop
-//
-//                }
-//
-//            }
-//
-//        }
-//
-//
-////        for grid in allGrids {
-////            count += 1
-////            for rowOrColumn in grid {
-////                let rowOrColumnSet: Set = Set(rowOrColumn)
-////
-////                if rowOrColumnSet.isSubset(of: calledNumbersSet) {
-////                    var flatGrid = grid.flatMap { $0 }
-////
-////                    for num in calledNumbers {
-////                        if flatGrid.contains(num) {
-////                            if let index = flatGrid.firstIndex(of: num) {
-////                                flatGrid.remove(at: index)
-////                            }
-////                        }
-////                    }
-////                    let total = flatGrid.reduce(0, +)
-////                    if let lastCalledNumber = calledNumbers.last {
-////                        let output = total * lastCalledNumber
-////                        print("output = \(output)")
-//////                        return total * lastCalledNumber
-////                    }
-//////                    break outerLoop
-////                }
-////            }
-////        }
-//    }
-//        return nil
-//    }
-//
-//
-//
-//    func stepThroughCalledNumbersPart2A() -> Int? {
-//        guard let rawString = loadFile(fileName: "input-4") else {return nil}
-//        guard let exampleNumbers = separateCalledNumbers(input: rawString) else {return nil}
-//        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
-//
-//        var calledNumbers: [Int] = []
-//        let rowGrids = numberGridsInRows(input: rawString)
-//        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
-//        let allGrids = rowGrids + columnGrids
-//
-//        var gridsWon: Set<Int> = []
-//
-//    outerLoop: for number in exampleNumbers {
-//        calledNumbers.append(number)
-//        let calledNumbersSet: Set = Set(calledNumbers)
-//
-//        for i in 0..<rowGrids.count {
-//
-//            for j in 0..<5  {
-//                let rowSet: Set = Set(rowGrids[i][j])
-////                print("row set: \(rowSet)")
-//                let columnSet: Set = Set(rowGrids[i][j])
-////                print("column set: \(columnSet)")
-//
-//                if rowSet.isSubset(of: calledNumbersSet) || columnSet.isSubset(of: calledNumbersSet) && gridsWon.count < rowGrids.count {
-//                    gridsWon.insert(i)
-//
-//                } else if rowSet.isSubset(of: calledNumbersSet) || columnSet.isSubset(of: calledNumbersSet) && (rowGrids.count - gridsWon.count == 1) {
-//                    print(i)
-//
-//                    var flatGrid = rowGrids[i].flatMap { $0 }
-//
-//                    for num in calledNumbers {
-//                        if flatGrid.contains(num) {
-//                            if let index = flatGrid.firstIndex(of: num) {
-//                                flatGrid.remove(at: index)
-//                            }
-//                        }
-//                    }
-//                    let total = flatGrid.reduce(0, +)
-//                    if let lastCalledNumber = calledNumbers.last {
-//                        return total * lastCalledNumber
-//                    }
-//                    break outerLoop
-//                }
-//            }
-//        }
-//    }
-//        return nil
-//    }
-//
-//
-//    func finalCheck() -> Int? {
-//        guard let rawString = loadFile(fileName: "input-4") else {return nil}
-//        guard let exampleNumbers = separateCalledNumbers(input: rawString) else {return nil}
-//        //        guard let exampleNumbers = separateCalledNumbers(input: example) else {return nil}
-//
-//        var calledNumbers: [Int] = []
-//        let rowGrids = numberGridsInRows(input: rawString)
-//        let columnGrids = makeColumnGrid(numberGridInRows: numberGridsInRows(input: rawString))
-//        let allGrids = rowGrids + columnGrids
-//        let lastGrids = [rowGrids[61], columnGrids[61]]
-//
-//    outerLoop: for number in exampleNumbers {
-//        calledNumbers.append(number)
-//        let calledNumbersSet: Set = Set(calledNumbers)
-//
-//        for grid in lastGrids {
-//
-//            for rowOrColumn in grid {
-//                let rowOrColumnSet: Set = Set(rowOrColumn)
-//
-//                if rowOrColumnSet.isSubset(of: calledNumbersSet) {
-//                    var flatGrid = grid.flatMap { $0 }
-//
-//                    for num in calledNumbers {
-//                        if flatGrid.contains(num) {
-//                            if let index = flatGrid.firstIndex(of: num) {
-//                                flatGrid.remove(at: index)
-//                            }
-//                        }
-//                    }
-//                    let total = flatGrid.reduce(0, +)
-//                    print(total)
-//                    print(flatGrid)
-//                    if let lastCalledNumber = calledNumbers.last {
-//                        return total * lastCalledNumber
-//                    }
-//                    break outerLoop
-//                }
-//            }
-//        }
-//    }
-//        return nil
-//    }
-//
