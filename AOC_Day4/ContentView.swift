@@ -106,9 +106,7 @@ struct Grid {
 
         for i in 0..<rows {
             let tempRow = numbers.filter { $0.coordinates.y == i }
-//            print("temp row: \(tempRow)")
             let tempRowSet = Set(tempRow.map { $0.number } )
-//            print(tempRowSet)
             if tempRowSet.isSubset(of: calledNumbers.calledNumbersSet) {
                 hasWon = true
                 
@@ -132,9 +130,7 @@ struct Grid {
         
         for i in 0..<columns {
             let tempColumn = numbers.filter { $0.coordinates.x == i }
-//            print("temp row: \(tempColumn)")
             let tempColumnSet = Set(tempColumn.map { $0.number } )
-//            print(tempColumnSet)
             if tempColumnSet.isSubset(of: calledNumbers.calledNumbersSet) {
                 hasWon = true
                 
@@ -151,15 +147,11 @@ struct Grid {
                 if let lastCalledNumber = calledNumbers.calledNumbers.last {
                     print( total * lastCalledNumber )
                 }
-                
                 return (true, calledNumbers.calledNumbers)
-                
             }
         }
-        
         return nil
     }
-    
 }
 
 struct GridNumber {
@@ -185,17 +177,12 @@ struct CalledNumbers {
 
 
 
-
-
 struct ContentView: View {
     var calledNumbers:[Int] = []
     var numberCards:[[Int]] = []
     var numberOfCards: Int = 0
-    
-    
 
-    
-    
+        
     var body: some View {
         Text("Hello, world!")
             .padding()
